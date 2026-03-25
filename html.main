@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CareerGrid</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #0a0a14; --surface: #12121f; --surface-border: #2a2a4a;
+      --primary: #7F77DD; --secondary: #5DCAA5; --error: #E24B4A;
+      --text-primary: #F0F0FF; --text-secondary: #8888AA;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-primary); overflow-x: hidden; }
+    .font-mono { font-family: 'Space Mono', monospace; }
+    
+    /* Screens & Animations */
+    .screen { display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; }
+    .screen.active { display: block; opacity: 1; transform: translateY(0); }
+    .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    
+    /* Inputs */
+    input { background: var(--bg); border: 1px solid var(--surface-border); border-radius: 8px; padding: 12px 16px; color: var(--text-primary); width: 100%; font-size: 15px; transition: all 0.2s; }
+    input:focus { outline: none; border-color: var(--primary); }
+    input.error { border-color: var(--error); }
+    
+    /* Buttons */
+    .btn-primary { background: var(--primary); color: white; padding: 12px 24px; border-radius: 24px; border: none; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: transparent; border: 1px solid var(--surface-border); color: var(--text-primary); padding: 12px 24px; border-radius: 24px; font-weight: 500; cursor: pointer; width: 100%; }
+    
+    /* Chip */
+    .chip { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--surface-border); background: var(--surface); cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .chip.selected { background: var(--primary); border-color: var(--primary); color: white; }
+    
+    /* Timeline */
+    .timeline-line { width: 2px; background: var(--primary); position: absolute; left: 19px; top: 40px; bottom: 0; opacity: 0.3; }
+    .node { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; z-index: 2; }
+    .node.locked { border-color: var(--surface-border); color: var(--text-secondary); }
+    
+    /* Response Viewer */
+    .response-viewer { position: fixed; bottom: 0; left: 0; right: 0; height: 50%; background: #050508; border-top: 1px solid var(--primary); z-index: 999; transform: translateY(100%); transition: transform 0.3s ease; padding: 16px; overflow-y: auto; }
+    .response-viewer.open { transform: translateY(0); }
+    pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12px; color: var(--secondary); }
+  </style>
+</head>
+<body>
+
+  <!-- Response Viewer (Dev Tools) -->
+  <div class="response-viewer" id="response-viewer">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-mono text-sm text-secondary">API Response Explorer</h3>
+      <button onclick="toggleViewer()" class="text-xs px-3 py-1 bg-surface rounded">Close</button>
+    </div>
+    <pre id="json-display">{}</pre>
+  </div>
+
+  <div id="app" class="min-h-screen pb-20">
+    
+    <!-- LOGIN SCREEN -->
+    <div class="screen active" id="login-screen">
+      <div class="min-h-screen flex flex-col justify-center px-6">
+        <div class="text-center mb-8">
+          <h1 class="font-mono text-2xl font-bold mb-2"><span style="color:var(--primary)">Career</span><span style="color:var(--secondary)">Grid</span></h1>
+          <p class="text-sm" style="color:var(--text-secondary)">Map your future</p>
+        </div>
+        
+        <div class="card p-6 mb-4">
+          <div id="login-error" class="hidden text-center text-xs mb-4 py-2 rounded" style="background: rgba(226,75,74,0.1); color:var(--error);"></div>
+          
+          <input type="email" id="login-email" placeholder="Email" class="mb-3">
+          <input type="password" id="login-pass" placeholder="Password" class="mb-4">
+          
+          <button class="btn-primary mb-3" onclick="handleLogin()">Sign In</button>
+          
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t" style="border-color:var(--surface-border)"></div></div>
+            <div class="relative flex justify-center text-xs"><span class="px-2" style="background:var(--surface); color:var(--text-secondary)">OR</span></div>
+          </div>
+          
+          <button class="btn-secondary flex items-center justify-center gap-2" onclick="handleGoogleLogin()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+        </div>
+        
+        <p class="text-center text-xs" style="color:var(--text-secondary)">
+          Demo: use <span class="font-mono" style="color:var(--secondary)">ravi@gmail.com</span> / <span class="font-mono" style="color:var(--secondary)">password123</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- ONBOARDING SCREEN -->
+    <div class="screen" id="onboarding-screen">
+      <div class="min-h-screen px-6 pt-12">
+        <div class="flex gap-2 mb-8" id="progress-bar">
+          <div class="h-1 flex-1 rounded" style="background:var(--primary)"></div>
+          <div class="h-1 flex-1 rounded" style="background:var(--surface-border)"></div>
+          <div class="h-1 flex-1 rounded" style="background:var(--surface-border)"></div>
+          <div class="h-1 flex-1 rounded" style="background:var(--surface-border)"></div>
+        </div>
+        
+        <!-- Step 1: Role -->
+        <div id="step-1">
+          <h2 class="font-mono text-xl font-bold mb-2">What's your current role?</h2>
+          <input type="text" id="role-input" placeholder="e.g., Software Engineer" class="mt-4 mb-4">
+          <div class="flex flex-wrap gap-2">
+            <button class="chip" onclick="setRole(this)">Software Engineer</button>
+            <button class="chip" onclick="setRole(this)">Data Analyst</button>
+            <button class="chip" onclick="setRole(this)">Student</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Skills -->
+        <div id="step-2" class="hidden">
+          <h2 class="font-mono text-xl font-bold mb-2">Select your skills</h2>
+          <div class="flex flex-wrap gap-2 mt-4" id="skills-container">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Step 3: Target -->
+        <div id="step-3" class="hidden">
+          <h2 class="font-mono text-xl font-bold mb-2">Target Role</h2>
+          <select id="target-select" class="mt-4 w-full bg-surface border p-3 rounded-lg" style="background:var(--surface)">
+            <option>Senior Software Engineer</option>
+            <option>Data Scientist</option>
+            <option>Product Manager</option>
+          </select>
+        </div>
+
+        <div class="flex justify-between mt-8">
+          <button class="btn-secondary" id="back-btn" onclick="changeStep(-1)" style="visibility:hidden">Back</button>
+          <button class="btn-primary" onclick="changeStep(1)" style="width: 120px">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="screen" id="home-screen">
+      <div class="px-6 pt-6 pb-4 flex justify-between items-center">
+        <h1 class="font-mono text-lg font-bold">CareerGrid</h1>
+        <div class="flex gap-2">
+          <button onclick="toggleViewer()" class="text-xs px-2 py-1 rounded border" style="border-color:var(--surface-border)">Dev Tools</button>
+          <button onclick="logout()" class="text-xs px-2 py-1 rounded border" style="border-color:var(--error); color:var(--error)">Logout</button>
+        </div>
+      </div>
+      
+      <div class="px-6 mb-6">
+        <h2 class="font-mono text-xl font-bold" id="home-hero">Loading...</h2>
+        <p class="text-sm" style="color:var(--text-secondary)" id="home-sub">Generating roadmap...</p>
+      </div>
+
+      <div class="px-6" id="timeline-area">
+        <!-- Dynamic content -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+    let currentStep = 1;
+    let state = { user: null, skills: [], role: "", target: "" };
+    const skillsList = ["Python", "React", "SQL", "Node.js", "Docker", "AWS", "Java", "Excel", "Leadership"];
+
+    // --- UTILS ---
+    function $(id) { return document.getElementById(id); }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); $(id).classList.add('active'); }
+    
+    function updateJsonViewer(data) {
+      $('json-display').innerText = JSON.stringify(data, null, 2);
+    }
+    
+    function toggleViewer() { $('response-viewer').classList.toggle('open'); }
+
+    // --- AUTH FLOW ---
+    async function handleLogin() {
+      const email = $('login-email').value;
+      const pass = $('login-pass').value;
+      
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass })
+        });
+
+        const data = await res.json();
+        updateJsonViewer(data); // Show response in explorer
+
+        if (!res.ok) {
+          $('login-error').innerText = data.detail || "Login failed";
+          $('login-error').classList.remove('hidden');
+          return;
+        }
+
+        processAuthResponse(data);
+      } catch (e) {
+        $('login-error').innerText = "Network Error. Is backend running?";
+        $('login-error').classList.remove('hidden');
+      }
+    }
+
+    async function handleGoogleLogin() {
+      // Simulating Google Token receipt
+      const res = await fetch(`${API}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: "mock.google.token" })
+      });
+      const data = await res.json();
+      updateJsonViewer(data);
+      processAuthResponse(data);
+    }
+
+    function processAuthResponse(data) {
+      // 1. Store Session
+      localStorage.setItem('session', JSON.stringify(data.session));
+      state.user = data.db_user;
+
+      // 2. Check Onboarding Flag
+      if (data.db_user.onboarding_complete) {
+        showScreen('home-screen');
+        fetchRoadmap(); // Fetch existing roadmap or generate
+      } else {
+        showScreen('onboarding-screen');
+        initSkills();
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      showScreen('login-screen');
+    }
+
+    // --- ONBOARDING ---
+    function initSkills() {
+      const container = $('skills-container');
+      container.innerHTML = skillsList.map(s => `<button class="chip" onclick="toggleSkill(this, '${s}')">${s}</button>`).join('');
+    }
+
+    function toggleSkill(el, skill) {
+      el.classList.toggle('selected');
+      if (state.skills.includes(skill)) state.skills = state.skills.filter(s => s !== skill);
+      else state.skills.push(skill);
+    }
+
+    function setRole(el) {
+      $('role-input').value = el.innerText;
+      state.role = el.innerText;
+      document.querySelectorAll('#step-1 .chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function changeStep(dir) {
+      currentStep += dir;
+      document.querySelectorAll('[id^="step-"]').forEach(s => s.classList.add('hidden'));
+      $(`step-${currentStep}`).classList.remove('hidden');
+      
+      // Progress bar logic
+      const bars = $('progress-bar').children;
+      for(let i=0; i<bars.length; i++) bars[i].style.background = i < currentStep ? 'var(--primary)' : 'var(--surface-border)';
+
+      $('back-btn').style.visibility = currentStep > 1 ? 'visible' : 'hidden';
+
+      if (currentStep === 4) {
+        // Finish Onboarding
+        completeOnboarding();
+      }
+    }
+
+    async function completeOnboarding() {
+      state.target = $('target-select').value;
+      showScreen('home-screen');
+      
+      // Call Roadmap API
+      await fetchRoadmap();
+      
+      // Mock update DB flag
+      if(state.user) state.user.onboarding_complete = true;
+    }
+
+    // --- ROADMAP ---
+    async function fetchRoadmap() {
+      $('home-sub').innerText = "Generating your AI roadmap...";
+      
+      try {
+        const res = await fetch(`${API}/generate-roadmap`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentRole: state.role || "Software Engineer",
+            skills: state.skills.length ? state.skills : ["Python"],
+            experienceYears: "1-3",
+            targetRole: state.target || "Senior Engineer",
+            industry: "Tech",
+            city: "Bangalore",
+            goalType: "Promotion",
+            tier: "free"
+          })
+        });
+        
+        const data = await res.json();
+        updateJsonViewer(data); // Update explorer
+        renderRoadmap(data);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    function renderRoadmap(data) {
+      $('home-hero').innerText = `Path to ${data.target_role || 'Next Level'}`;
+      $('home-sub').innerText = data.summary || "Here is your plan.";
+      
+      const area = $('timeline-area');
+      area.innerHTML = `<div class="timeline-line"></div>`;
+      
+      (data.phases || []).forEach((phase, i) => {
+        const isLocked = i > 0; // Lock phases after first for Free user
+        area.innerHTML += `
+          <div class="flex gap-4 mb-6 relative">
+            <div class="node ${isLocked ? 'locked' : ''}">${isLocked ? '🔒' : phase.phase_number}</div>
+            <div class="card p-4 flex-1">
+              <div class="flex justify-between mb-2">
+                <h3 class="font-bold">${phase.title}</h3>
+                <span class="text-xs" style="color:var(--secondary)">${phase.duration}</span>
+              </div>
+              <p class="text-xs mb-2" style="color:var(--text-secondary)">${phase.focus}</p>
+              <div class="flex gap-2 flex-wrap">
+                ${phase.skills.map(s => `<span class="text-xs px-2 py-1 rounded" style="background:var(--bg)">${s}</span>`).join('')}
+              </div>
+              ${isLocked ? `<button class="btn-primary mt-4 text-xs py-2">Unlock with Starter</button>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Check session on load
+    const savedSession = localStorage.getItem('session');
+    if(savedSession) {
+      // In real app, verify token with backend here
+      showScreen('home-screen');
+      fetchRoadmap();
+    }
+  </script>
+</body>
+</html>
