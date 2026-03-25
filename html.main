@@ -1,351 +1,2308 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CareerGrid</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --bg: #0a0a14; --surface: #12121f; --surface-border: #2a2a4a;
-      --primary: #7F77DD; --secondary: #5DCAA5; --error: #E24B4A;
-      --text-primary: #F0F0FF; --text-secondary: #8888AA;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-primary); overflow-x: hidden; }
-    .font-mono { font-family: 'Space Mono', monospace; }
-    
-    /* Screens & Animations */
-    .screen { display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; }
-    .screen.active { display: block; opacity: 1; transform: translateY(0); }
-    .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
-    
-    /* Inputs */
-    input { background: var(--bg); border: 1px solid var(--surface-border); border-radius: 8px; padding: 12px 16px; color: var(--text-primary); width: 100%; font-size: 15px; transition: all 0.2s; }
-    input:focus { outline: none; border-color: var(--primary); }
-    input.error { border-color: var(--error); }
-    
-    /* Buttons */
-    .btn-primary { background: var(--primary); color: white; padding: 12px 24px; border-radius: 24px; border: none; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary { background: transparent; border: 1px solid var(--surface-border); color: var(--text-primary); padding: 12px 24px; border-radius: 24px; font-weight: 500; cursor: pointer; width: 100%; }
-    
-    /* Chip */
-    .chip { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--surface-border); background: var(--surface); cursor: pointer; font-size: 14px; transition: all 0.2s; }
-    .chip.selected { background: var(--primary); border-color: var(--primary); color: white; }
-    
-    /* Timeline */
-    .timeline-line { width: 2px; background: var(--primary); position: absolute; left: 19px; top: 40px; bottom: 0; opacity: 0.3; }
-    .node { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-weight: bold; position: relative; z-index: 2; }
-    .node.locked { border-color: var(--surface-border); color: var(--text-secondary); }
-    
-    /* Response Viewer */
-    .response-viewer { position: fixed; bottom: 0; left: 0; right: 0; height: 50%; background: #050508; border-top: 1px solid var(--primary); z-index: 999; transform: translateY(100%); transition: transform 0.3s ease; padding: 16px; overflow-y: auto; }
-    .response-viewer.open { transform: translateY(0); }
-    pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12px; color: var(--secondary); }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareerGrid — AI Career Roadmap</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #070712;
+    --bg2:       #0d0d1f;
+    --bg3:       #12122a;
+    --card:      #0f0f22;
+    --border:    #1e1e3f;
+    --border2:   #2a2a5a;
+    --purple:    #7c6ff7;
+    --purple2:   #a89cf7;
+    --teal:      #4ecdc4;
+    --teal2:     #7eddd7;
+    --amber:     #f7b731;
+    --red:       #e84393;
+    --text:      #e8e8f8;
+    --text2:     #9090b8;
+    --text3:     #5050788;
+    --glow-p:    0 0 20px rgba(124,111,247,0.35);
+    --glow-t:    0 0 20px rgba(78,205,196,0.35);
+    --font-head: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEX GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(124,111,247,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(78,205,196,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hex-bg {
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52'%3E%3Cpath d='M30 2 L58 17 L58 47 L30 62 L2 47 L2 17 Z' fill='none' stroke='rgba(124,111,247,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 60px 52px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SCREENS ── */
+  .screen { position: relative; z-index: 1; display: none; }
+  .screen.active { display: block; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ══════════════════════════════
+     LOGIN SCREEN
+  ══════════════════════════════ */
+  #screen-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  #screen-login.active { display: flex; }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: var(--glow-p), 0 40px 80px rgba(0,0,0,0.6);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .logo-mark {
+    width: 64px; height: 64px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    box-shadow: var(--glow-p);
+  }
+  .logo-mark svg { width: 32px; height: 32px; fill: #fff; }
+
+  .login-title {
+    font-family: var(--font-head);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.4rem;
+  }
+  .login-title span { color: var(--purple2); }
+
+  .login-sub {
+    color: var(--text2);
+    font-size: 0.9rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--text2); font-size: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1;
+    height: 1px; background: var(--border);
+  }
+
+  /* Google button override */
+  #g_id_onload, .g_id_signin { margin: 0 auto; }
+  .google-btn-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .email-form { text-align: left; }
+  .field-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .field-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 11px 14px;
+    margin-bottom: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,111,247,0.12); }
+  .field-input::placeholder { color: var(--text2); opacity: 0.5; }
+
+  .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 12px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: opacity 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .toggle-auth {
+    margin-top: 1.2rem;
+    font-size: 0.85rem;
+    color: var(--text2);
+  }
+  .toggle-auth a {
+    color: var(--purple2);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .toggle-auth a:hover { text-decoration: underline; }
+
+  .auth-error {
+    background: rgba(232,67,147,0.1);
+    border: 1px solid rgba(232,67,147,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #f48fb1;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  /* ══════════════════════════════
+     ONBOARDING SCREEN
+  ══════════════════════════════ */
+  #screen-onboarding {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+  }
+  #screen-onboarding.active { display: flex; }
+
+  .onboard-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .progress-bar {
+    display: flex; gap: 6px;
+    margin-bottom: 2rem;
+  }
+  .progress-seg {
+    flex: 1; height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .progress-seg.done { background: var(--purple); }
+  .progress-seg.active { background: linear-gradient(90deg, var(--purple), var(--teal)); }
+
+  .step-title {
+    font-family: var(--font-head);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .step-sub { color: var(--text2); font-size: 0.88rem; margin-bottom: 1.8rem; }
+
+  .step-page { display: none; }
+  .step-page.active { display: block; }
+
+  .chip-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .chip {
+    padding: 6px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text2);
+    background: var(--bg2);
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--purple); color: var(--purple2); }
+  .chip.selected {
+    background: rgba(124,111,247,0.15);
+    border-color: var(--purple);
+    color: var(--purple2);
+    box-shadow: 0 0 8px rgba(124,111,247,0.2);
+  }
+
+  .seg-buttons {
+    display: flex; gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .seg-btn {
+    flex: 1; padding: 10px 8px;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    background: var(--bg2);
+    color: var(--text2);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .seg-btn:hover { border-color: var(--purple); color: var(--purple2); }
+  .seg-btn.selected {
+    background: rgba(124,111,247,0.15);
+    border-color: var(--purple);
+    color: var(--purple2);
+  }
+
+  .onboard-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.5rem;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    color: var(--text2);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-ghost:hover { border-color: var(--border); color: var(--text); }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-next:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* ══════════════════════════════
+     MAIN APP SCREEN
+  ══════════════════════════════ */
+  #screen-app { min-height: 100vh; }
+  #screen-app.active { display: block; }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(7,7,18,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-logo {
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .topbar-logo-icon {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .topbar-logo span { color: var(--purple2); }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .plan-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .plan-free    { background: rgba(80,80,120,0.3); color: var(--text2); border: 1px solid var(--border2); }
+  .plan-starter { background: rgba(78,205,196,0.15); color: var(--teal2); border: 1px solid rgba(78,205,196,0.3); }
+  .plan-pro     { background: rgba(124,111,247,0.15); color: var(--purple2); border: 1px solid rgba(124,111,247,0.3); }
+  .plan-elite   { background: rgba(247,183,49,0.15); color: var(--amber); border: 1px solid rgba(247,183,49,0.3); }
+
+  .user-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.82rem; font-weight: 700;
+    cursor: pointer;
+    position: relative;
+  }
+  .user-menu {
+    position: absolute; top: 44px; right: 0;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    min-width: 180px;
+    padding: 8px;
+    display: none;
+    z-index: 200;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
+  .user-menu.open { display: block; animation: fadeUp 0.15s ease; }
+  .user-menu-item {
+    padding: 9px 12px;
+    font-size: 0.88rem;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.12s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .user-menu-item:hover { background: var(--bg2); color: var(--text); }
+  .user-menu-item.danger:hover { color: var(--red); }
+  .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* MAIN LAYOUT */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+  .sidebar-section { margin-bottom: 2rem; }
+  .sidebar-section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    padding: 0 8px;
+    margin-bottom: 6px;
+    opacity: 0.6;
+  }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 0.88rem;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+  .sidebar-item:hover { background: var(--bg2); color: var(--text); }
+  .sidebar-item.active { background: rgba(124,111,247,0.12); color: var(--purple2); }
+  .sidebar-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+  /* MAIN CONTENT */
+  .main-content { padding: 2rem; max-width: 900px; }
+
+  /* ── DASHBOARD VIEW ── */
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn 0.3s ease; }
+
+  .view-header { margin-bottom: 2rem; }
+  .view-title {
+    font-family: var(--font-head);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  .view-title span { color: var(--purple2); }
+  .view-sub { color: var(--text2); font-size: 0.9rem; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: var(--font-head);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .stat-value.purple { color: var(--purple2); }
+  .stat-value.teal { color: var(--teal2); }
+
+  /* Roadmap cards */
+  .roadmap-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 2rem; }
+
+  .roadmap-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .roadmap-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--purple), var(--teal));
+  }
+  .roadmap-card:hover {
+    border-color: var(--border2);
+    box-shadow: var(--glow-p);
+    transform: translateY(-2px);
+  }
+  .roadmap-card-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .roadmap-card-title { font-weight: 600; font-size: 1rem; }
+  .roadmap-card-meta { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+  .roadmap-card-badge {
+    font-size: 0.72rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    background: rgba(124,111,247,0.15);
+    color: var(--purple2);
+    border: 1px solid rgba(124,111,247,0.25);
+    white-space: nowrap;
+  }
+  .phase-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .phase-pill {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: var(--bg2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .phase-pill.unlocked { color: var(--teal2); border-color: rgba(78,205,196,0.3); background: rgba(78,205,196,0.07); }
+  .phase-pill.locked { opacity: 0.4; }
+
+  /* ── GENERATE VIEW ── */
+  .generate-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label {
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .form-select {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239090b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .form-select:focus { border-color: var(--purple); }
+  .form-select option { background: var(--bg2); }
+
+  /* Loading / generating state */
+  .generating-overlay {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    display: none;
+  }
+  .generating-overlay.active { display: block; }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    margin: 0 auto 1.2rem;
+    animation: spin 0.8s linear infinite;
+  }
+  .gen-title {
+    font-family: var(--font-head);
+    font-size: 1rem; margin-bottom: 0.4rem;
+  }
+  .gen-sub { color: var(--text2); font-size: 0.88rem; }
+  .gen-steps { margin-top: 1.2rem; display: flex; flex-direction: column; gap: 6px; }
+  .gen-step {
+    font-size: 0.82rem; color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+    justify-content: center;
+  }
+  .gen-step.done { color: var(--teal2); }
+  .gen-step-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+  .gen-step.done .gen-step-dot { background: var(--teal2); }
+  .gen-step.current .gen-step-dot { background: var(--purple); animation: pulse 1s infinite; }
+
+  /* ── ROADMAP DETAIL VIEW ── */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text2); font-size: 0.88rem;
+    cursor: pointer; margin-bottom: 1.5rem;
+    transition: color 0.15s;
+    background: none; border: none;
+  }
+  .back-btn:hover { color: var(--purple2); }
+
+  .roadmap-detail-header {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .roadmap-detail-header::after {
+    content: '';
+    position: absolute; right: -20px; top: -20px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(124,111,247,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .detail-role {
+    font-family: var(--font-head);
+    font-size: 1.3rem; font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  .detail-role span { color: var(--purple2); }
+  .detail-meta { color: var(--text2); font-size: 0.88rem; margin-bottom: 1.2rem; }
+
+  .detail-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .detail-stat { }
+  .detail-stat-val {
+    font-family: var(--font-head);
+    font-size: 1.1rem; font-weight: 700;
+  }
+  .detail-stat-val.purple { color: var(--purple2); }
+  .detail-stat-val.teal { color: var(--teal2); }
+  .detail-stat-lbl { font-size: 0.75rem; color: var(--text2); }
+
+  /* Skill gap meter */
+  .gap-meter-wrap { margin: 1.2rem 0; }
+  .gap-meter-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.8rem; color: var(--text2); margin-bottom: 6px;
+  }
+  .gap-meter-bar {
+    height: 6px; background: var(--bg2); border-radius: 3px;
+    overflow: hidden;
+  }
+  .gap-meter-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--purple), var(--teal));
+    transition: width 1s ease;
+  }
+
+  /* Phase cards */
+  .phases-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .phase-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .phase-card:hover { border-color: var(--border2); }
+  .phase-card.locked { opacity: 0.7; }
+
+  .phase-card-header {
+    padding: 1.2rem 1.4rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    user-select: none;
+  }
+  .phase-card-header:hover { background: rgba(255,255,255,0.02); }
+
+  .phase-num {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head);
+    font-size: 0.82rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .phase-num.locked-num {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  .phase-header-info { flex: 1; margin: 0 12px; }
+  .phase-title { font-weight: 600; font-size: 0.95rem; }
+  .phase-duration { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+
+  .phase-chevron {
+    color: var(--text2);
+    transition: transform 0.2s;
+    font-size: 0.9rem;
+  }
+  .phase-chevron.open { transform: rotate(180deg); }
+
+  .phase-card-body {
+    display: none;
+    padding: 0 1.4rem 1.4rem;
+    border-top: 1px solid var(--border);
+  }
+  .phase-card-body.open { display: block; animation: fadeIn 0.2s ease; }
+
+  .phase-section { margin-top: 1.2rem; }
+  .phase-section-title {
+    font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text2); margin-bottom: 8px;
+  }
+
+  .skills-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .skill-tag {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(124,111,247,0.1);
+    color: var(--purple2);
+    border: 1px solid rgba(124,111,247,0.2);
+  }
+
+  .cert-list { display: flex; flex-direction: column; gap: 8px; }
+  .cert-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.85rem;
+  }
+  .cert-name { font-weight: 500; }
+  .cert-provider { font-size: 0.78rem; color: var(--text2); margin-top: 2px; }
+  .cert-cost {
+    font-size: 0.78rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 5px;
+    white-space: nowrap;
+  }
+  .cert-cost.free { background: rgba(78,205,196,0.12); color: var(--teal2); border: 1px solid rgba(78,205,196,0.25); }
+  .cert-cost.paid { background: rgba(247,183,49,0.1); color: var(--amber); border: 1px solid rgba(247,183,49,0.25); }
+
+  .project-list { display: flex; flex-direction: column; gap: 8px; }
+  .project-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+  .project-title { font-weight: 500; margin-bottom: 3px; }
+  .project-desc { color: var(--text2); font-size: 0.82rem; line-height: 1.5; }
+  .project-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .project-tag {
+    font-size: 0.72rem;
+    padding: 2px 8px; border-radius: 4px;
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .diff-badge {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
+    font-weight: 600;
+  }
+  .diff-beginner { background: rgba(78,205,196,0.1); color: var(--teal2); }
+  .diff-intermediate { background: rgba(247,183,49,0.1); color: var(--amber); }
+  .diff-advanced { background: rgba(232,67,147,0.1); color: var(--red); }
+
+  /* Salary bars */
+  .salary-section { }
+  .salary-bar-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .salary-city { font-size: 0.78rem; color: var(--text2); width: 80px; flex-shrink: 0; }
+  .salary-bar-wrap { flex: 1; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+  .salary-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--purple), var(--teal)); transition: width 1s ease; }
+  .salary-range { font-size: 0.75rem; color: var(--text2); white-space: nowrap; width: 120px; text-align: right; }
+
+  /* Locked overlay */
+  .locked-overlay {
+    padding: 1.5rem;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .locked-overlay.show { display: block; }
+  .lock-icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .lock-msg { color: var(--text2); font-size: 0.85rem; margin-bottom: 12px; }
+  .btn-upgrade {
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border: none; border-radius: 10px;
+    color: #fff; font-family: var(--font-body);
+    font-size: 0.85rem; font-weight: 600;
+    padding: 9px 20px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-upgrade:hover { opacity: 0.88; }
+
+  /* ── EXPLORE VIEW ── */
+  .explore-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .explore-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .explore-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .explore-card:nth-child(1)::before { background: linear-gradient(180deg, #7c6ff7, #4ecdc4); }
+  .explore-card:nth-child(2)::before { background: linear-gradient(180deg, #f7b731, #e84393); }
+  .explore-card:nth-child(3)::before { background: linear-gradient(180deg, #4ecdc4, #7c6ff7); }
+  .explore-card:nth-child(4)::before { background: linear-gradient(180deg, #e84393, #f7b731); }
+  .explore-card:nth-child(5)::before { background: linear-gradient(180deg, #7c6ff7, #f7b731); }
+  .explore-card:nth-child(6)::before { background: linear-gradient(180deg, #4ecdc4, #e84393); }
+
+  .explore-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--glow-p); }
+  .explore-card.locked-card { }
+  .explore-card-icon { font-size: 1.6rem; margin-bottom: 10px; }
+  .explore-card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+  .explore-card-desc { color: var(--text2); font-size: 0.82rem; line-height: 1.5; }
+  .explore-lock-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 0.68rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 5px;
+    background: rgba(124,111,247,0.15);
+    color: var(--purple2);
+    border: 1px solid rgba(124,111,247,0.3);
+  }
+
+  /* ── PROFILE VIEW ── */
+  .profile-header {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1.2rem;
+  }
+  .profile-avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .profile-name { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-bottom: 2px; }
+  .profile-email { color: var(--text2); font-size: 0.85rem; margin-bottom: 8px; }
+
+  .usage-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .usage-label { font-size: 0.78rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; font-weight: 600; }
+  .usage-bar-wrap { height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+  .usage-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--purple), var(--teal)); }
+  .usage-text { font-size: 0.82rem; color: var(--text2); }
+
+  .plan-section {
+    background: var(--card);
+    border: 1px solid rgba(124,111,247,0.3);
+    border-radius: 16px;
+    padding: 1.4rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 24px rgba(124,111,247,0.08);
+  }
+
+  /* ── PAYWALL VIEW ── */
+  .paywall-toggle {
+    display: flex; align-items: center; gap: 10px;
+    justify-content: center; margin-bottom: 2rem;
+    font-size: 0.88rem; color: var(--text2);
+  }
+  .toggle-switch {
+    width: 44px; height: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    position: relative; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-switch.on { background: rgba(124,111,247,0.4); border-color: var(--purple); }
+  .toggle-knob {
+    width: 18px; height: 18px;
+    background: var(--text2);
+    border-radius: 50%;
+    position: absolute; top: 2px; left: 3px;
+    transition: left 0.2s, background 0.2s;
+  }
+  .toggle-switch.on .toggle-knob { left: 23px; background: var(--purple2); }
+
+  .plans-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .plan-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .plan-card.popular {
+    border-color: rgba(78,205,196,0.5);
+    box-shadow: var(--glow-t);
+  }
+  .popular-label {
+    position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(90deg, var(--purple), var(--teal));
+    color: #fff; font-size: 0.72rem; font-weight: 700;
+    padding: 3px 12px; border-radius: 10px;
+    letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .plan-card-name { font-family: var(--font-head); font-size: 0.88rem; font-weight: 700; margin-bottom: 4px; }
+  .plan-card-price { font-family: var(--font-head); font-size: 1.8rem; font-weight: 700; color: var(--text); }
+  .plan-card-price span { font-size: 0.9rem; font-weight: 400; color: var(--text2); }
+  .plan-card-save { font-size: 0.78rem; color: var(--teal2); margin-bottom: 1.2rem; min-height: 1.1rem; }
+  .plan-features { list-style: none; margin-bottom: 1.4rem; display: flex; flex-direction: column; gap: 7px; }
+  .plan-feat { font-size: 0.82rem; color: var(--text2); display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+  .feat-check { color: var(--teal2); flex-shrink: 0; font-size: 0.8rem; margin-top: 1px; }
+  .feat-x { color: var(--border2); flex-shrink: 0; font-size: 0.8rem; margin-top: 1px; }
+
+  .btn-subscribe {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-subscribe:hover { border-color: var(--purple); color: var(--purple2); }
+  .btn-subscribe.primary {
+    background: linear-gradient(135deg, var(--purple), var(--teal));
+    border: none; color: #fff;
+  }
+  .btn-subscribe.primary:hover { opacity: 0.9; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 0.88rem;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 9999;
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(78,205,196,0.4); }
+  .toast.error { border-color: rgba(232,67,147,0.4); }
+  .toast-icon { font-size: 1rem; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .app-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .plans-grid { grid-template-columns: 1fr; }
+    .explore-grid { grid-template-columns: 1fr; }
+    .main-content { padding: 1.2rem; }
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+</style>
 </head>
 <body>
 
-  <!-- Response Viewer (Dev Tools) -->
-  <div class="response-viewer" id="response-viewer">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="font-mono text-sm text-secondary">API Response Explorer</h3>
-      <button onclick="toggleViewer()" class="text-xs px-3 py-1 bg-surface rounded">Close</button>
+<div class="hex-bg"></div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg">Success</span>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN: LOGIN
+════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="logo-mark">
+      <svg viewBox="0 0 32 32"><polygon points="16,2 30,9.5 30,22.5 16,30 2,22.5 2,9.5" fill="none" stroke="white" stroke-width="2"/><polygon points="16,8 24,12 24,20 16,24 8,20 8,12" fill="white" opacity="0.3"/></svg>
     </div>
-    <pre id="json-display">{}</pre>
+    <div class="login-title">Career<span>Grid</span></div>
+    <div class="login-sub">AI-powered career roadmaps for India's workforce</div>
+
+    <!-- Google Sign-In -->
+    <div class="google-btn-wrap" id="google-signin-btn"></div>
+
+    <div class="divider">or continue with email</div>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <div class="email-form" id="form-login">
+      <label class="field-label">Email address</label>
+      <input class="field-input" type="email" id="login-email" placeholder="you@gmail.com"/>
+      <label class="field-label">Password</label>
+      <input class="field-input" type="password" id="login-password" placeholder="••••••••"/>
+      <button class="btn-primary" onclick="handleEmailLogin()">Sign In</button>
+      <div class="toggle-auth">No account? <a onclick="showSignup()">Create one free</a></div>
+    </div>
+
+    <div class="email-form" id="form-signup" style="display:none">
+      <label class="field-label">Full Name</label>
+      <input class="field-input" type="text" id="signup-name" placeholder="Ravi Kumar"/>
+      <label class="field-label">Email address</label>
+      <input class="field-input" type="email" id="signup-email" placeholder="you@gmail.com"/>
+      <label class="field-label">Password</label>
+      <input class="field-input" type="password" id="signup-password" placeholder="min 8 characters"/>
+      <button class="btn-primary" onclick="handleEmailSignup()">Create Account</button>
+      <div class="toggle-auth">Already have one? <a onclick="showLogin()">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN: ONBOARDING
+════════════════════════════════ -->
+<div id="screen-onboarding" class="screen">
+  <div class="onboard-card">
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-seg active" id="seg0"></div>
+      <div class="progress-seg" id="seg1"></div>
+      <div class="progress-seg" id="seg2"></div>
+      <div class="progress-seg" id="seg3"></div>
+    </div>
+    <div class="step-title" id="step-title">What's your current role?</div>
+    <div class="step-sub" id="step-sub">Tell us where you are right now</div>
+
+    <!-- Step 0: Current Role -->
+    <div class="step-page active" id="step-0">
+      <label class="field-label">Current role</label>
+      <input class="field-input" type="text" id="ob-current-role" placeholder="e.g. Software Engineer, MBA Student, CA..."/>
+      <label class="field-label" style="margin-top:8px">Years of experience</label>
+      <div class="seg-buttons">
+        <button class="seg-btn" onclick="selectExp(this,'0')">Fresher</button>
+        <button class="seg-btn" onclick="selectExp(this,'2')">1–3 yrs</button>
+        <button class="seg-btn" onclick="selectExp(this,'4')">3–5 yrs</button>
+        <button class="seg-btn" onclick="selectExp(this,'6')">5+ yrs</button>
+      </div>
+    </div>
+
+    <!-- Step 1: Skills -->
+    <div class="step-page" id="step-1">
+      <label class="field-label">Your current skills (pick all that apply)</label>
+      <div class="chip-grid" id="skills-chips">
+        <div class="chip" onclick="toggleSkill(this)">Python</div>
+        <div class="chip" onclick="toggleSkill(this)">SQL</div>
+        <div class="chip" onclick="toggleSkill(this)">JavaScript</div>
+        <div class="chip" onclick="toggleSkill(this)">React</div>
+        <div class="chip" onclick="toggleSkill(this)">Java</div>
+        <div class="chip" onclick="toggleSkill(this)">Excel</div>
+        <div class="chip" onclick="toggleSkill(this)">PowerPoint</div>
+        <div class="chip" onclick="toggleSkill(this)">C/C++</div>
+        <div class="chip" onclick="toggleSkill(this)">Machine Learning</div>
+        <div class="chip" onclick="toggleSkill(this)">Data Analysis</div>
+        <div class="chip" onclick="toggleSkill(this)">Node.js</div>
+        <div class="chip" onclick="toggleSkill(this)">Flutter</div>
+        <div class="chip" onclick="toggleSkill(this)">AWS</div>
+        <div class="chip" onclick="toggleSkill(this)">Git</div>
+        <div class="chip" onclick="toggleSkill(this)">Figma</div>
+        <div class="chip" onclick="toggleSkill(this)">Accounting</div>
+        <div class="chip" onclick="toggleSkill(this)">Marketing</div>
+        <div class="chip" onclick="toggleSkill(this)">Communication</div>
+        <div class="chip" onclick="toggleSkill(this)">Leadership</div>
+        <div class="chip" onclick="toggleSkill(this)">Project Management</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Target -->
+    <div class="step-page" id="step-2">
+      <label class="field-label">Target role</label>
+      <select class="form-select" id="ob-target-role" style="width:100%;margin-bottom:1rem">
+        <option value="">Select your dream role...</option>
+        <option>Data Scientist</option><option>Machine Learning Engineer</option>
+        <option>Product Manager</option><option>Full Stack Developer</option>
+        <option>DevOps Engineer</option><option>Cloud Architect</option>
+        <option>Cybersecurity Analyst</option><option>UI/UX Designer</option>
+        <option>Business Analyst</option><option>Investment Banker</option>
+        <option>Management Consultant</option><option>IAS Officer</option>
+        <option>Chartered Accountant</option><option>Digital Marketer</option>
+        <option>Startup Founder</option><option>Research Scientist</option>
+      </select>
+      <label class="field-label">Industry</label>
+      <select class="form-select" id="ob-industry" style="width:100%">
+        <option value="">Select industry...</option>
+        <option>Tech / Software</option><option>Finance / Banking</option>
+        <option>Healthcare</option><option>Government / PSU</option>
+        <option>Startups</option><option>Manufacturing</option>
+        <option>Consulting</option><option>E-commerce</option>
+        <option>EdTech</option><option>FinTech</option>
+      </select>
+    </div>
+
+    <!-- Step 3: City + Goal -->
+    <div class="step-page" id="step-3">
+      <label class="field-label">City preference</label>
+      <select class="form-select" id="ob-city" style="width:100%;margin-bottom:1rem">
+        <option value="">Select city...</option>
+        <option>Bangalore</option><option>Mumbai</option><option>Delhi</option>
+        <option>Pune</option><option>Hyderabad</option><option>Chennai</option>
+        <option>Remote / WFH</option>
+      </select>
+      <label class="field-label">Your primary goal</label>
+      <div class="chip-grid" id="goal-chips">
+        <div class="chip" onclick="toggleGoal(this)">Switch careers</div>
+        <div class="chip" onclick="toggleGoal(this)">Get promoted</div>
+        <div class="chip" onclick="toggleGoal(this)">Crack FAANG</div>
+        <div class="chip" onclick="toggleGoal(this)">Go abroad</div>
+        <div class="chip" onclick="toggleGoal(this)">Govt job</div>
+        <div class="chip" onclick="toggleGoal(this)">Start a startup</div>
+        <div class="chip" onclick="toggleGoal(this)">Freelance / remote</div>
+        <div class="chip" onclick="toggleGoal(this)">Higher studies</div>
+      </div>
+    </div>
+
+    <div class="onboard-nav">
+      <button class="btn-ghost" id="btn-back" onclick="prevStep()" style="visibility:hidden">← Back</button>
+      <button class="btn-next" id="btn-next" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN: MAIN APP
+════════════════════════════════ -->
+<div id="screen-app" class="screen">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">⬡</div>
+      Career<span>Grid</span>
+    </div>
+    <div class="topbar-right">
+      <span class="plan-badge plan-free" id="topbar-plan-badge">Free</span>
+      <div class="user-avatar" id="user-avatar-btn" onclick="toggleUserMenu()">
+        <span id="user-initials">U</span>
+        <div class="user-menu" id="user-menu">
+          <div class="user-menu-item" id="menu-email" style="font-size:0.78rem;color:var(--text2);cursor:default">user@gmail.com</div>
+          <div class="menu-divider"></div>
+          <div class="user-menu-item" onclick="showView('profile')">👤 Profile</div>
+          <div class="user-menu-item" onclick="showView('paywall')">⚡ Upgrade Plan</div>
+          <div class="menu-divider"></div>
+          <div class="user-menu-item danger" onclick="handleLogout()">↩ Sign out</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div id="app" class="min-h-screen pb-20">
-    
-    <!-- LOGIN SCREEN -->
-    <div class="screen active" id="login-screen">
-      <div class="min-h-screen flex flex-col justify-center px-6">
-        <div class="text-center mb-8">
-          <h1 class="font-mono text-2xl font-bold mb-2"><span style="color:var(--primary)">Career</span><span style="color:var(--secondary)">Grid</span></h1>
-          <p class="text-sm" style="color:var(--text-secondary)">Map your future</p>
+  <!-- APP LAYOUT -->
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Menu</div>
+        <div class="sidebar-item active" id="nav-dashboard" onclick="showView('dashboard')">
+          <span class="sidebar-icon">⊞</span> Dashboard
         </div>
-        
-        <div class="card p-6 mb-4">
-          <div id="login-error" class="hidden text-center text-xs mb-4 py-2 rounded" style="background: rgba(226,75,74,0.1); color:var(--error);"></div>
-          
-          <input type="email" id="login-email" placeholder="Email" class="mb-3">
-          <input type="password" id="login-pass" placeholder="Password" class="mb-4">
-          
-          <button class="btn-primary mb-3" onclick="handleLogin()">Sign In</button>
-          
-          <div class="relative my-4">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t" style="border-color:var(--surface-border)"></div></div>
-            <div class="relative flex justify-center text-xs"><span class="px-2" style="background:var(--surface); color:var(--text-secondary)">OR</span></div>
-          </div>
-          
-          <button class="btn-secondary flex items-center justify-center gap-2" onclick="handleGoogleLogin()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-            Continue with Google
-          </button>
+        <div class="sidebar-item" id="nav-generate" onclick="showView('generate')">
+          <span class="sidebar-icon">✦</span> Generate Roadmap
         </div>
-        
-        <p class="text-center text-xs" style="color:var(--text-secondary)">
-          Demo: use <span class="font-mono" style="color:var(--secondary)">ravi@gmail.com</span> / <span class="font-mono" style="color:var(--secondary)">password123</span>
-        </p>
+        <div class="sidebar-item" id="nav-explore" onclick="showView('explore')">
+          <span class="sidebar-icon">◈</span> Explore Paths
+        </div>
       </div>
-    </div>
-
-    <!-- ONBOARDING SCREEN -->
-    <div class="screen" id="onboarding-screen">
-      <div class="min-h-screen px-6 pt-12">
-        <div class="flex gap-2 mb-8" id="progress-bar">
-          <div class="h-1 flex-1 rounded" style="background:var(--primary)"></div>
-          <div class="h-1 flex-1 rounded" style="background:var(--surface-border)"></div>
-          <div class="h-1 flex-1 rounded" style="background:var(--surface-border)"></div>
-          <div class="h-1 flex-1 rounded" style="background:var(--surface-border)"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Account</div>
+        <div class="sidebar-item" id="nav-profile" onclick="showView('profile')">
+          <span class="sidebar-icon">◯</span> Profile
         </div>
-        
-        <!-- Step 1: Role -->
-        <div id="step-1">
-          <h2 class="font-mono text-xl font-bold mb-2">What's your current role?</h2>
-          <input type="text" id="role-input" placeholder="e.g., Software Engineer" class="mt-4 mb-4">
-          <div class="flex flex-wrap gap-2">
-            <button class="chip" onclick="setRole(this)">Software Engineer</button>
-            <button class="chip" onclick="setRole(this)">Data Analyst</button>
-            <button class="chip" onclick="setRole(this)">Student</button>
-          </div>
-        </div>
-
-        <!-- Step 2: Skills -->
-        <div id="step-2" class="hidden">
-          <h2 class="font-mono text-xl font-bold mb-2">Select your skills</h2>
-          <div class="flex flex-wrap gap-2 mt-4" id="skills-container">
-            <!-- Generated by JS -->
-          </div>
-        </div>
-
-        <!-- Step 3: Target -->
-        <div id="step-3" class="hidden">
-          <h2 class="font-mono text-xl font-bold mb-2">Target Role</h2>
-          <select id="target-select" class="mt-4 w-full bg-surface border p-3 rounded-lg" style="background:var(--surface)">
-            <option>Senior Software Engineer</option>
-            <option>Data Scientist</option>
-            <option>Product Manager</option>
-          </select>
-        </div>
-
-        <div class="flex justify-between mt-8">
-          <button class="btn-secondary" id="back-btn" onclick="changeStep(-1)" style="visibility:hidden">Back</button>
-          <button class="btn-primary" onclick="changeStep(1)" style="width: 120px">Next</button>
+        <div class="sidebar-item" id="nav-paywall" onclick="showView('paywall')">
+          <span class="sidebar-icon">◈</span> Upgrade Plan
         </div>
       </div>
     </div>
 
-    <!-- HOME SCREEN -->
-    <div class="screen" id="home-screen">
-      <div class="px-6 pt-6 pb-4 flex justify-between items-center">
-        <h1 class="font-mono text-lg font-bold">CareerGrid</h1>
-        <div class="flex gap-2">
-          <button onclick="toggleViewer()" class="text-xs px-2 py-1 rounded border" style="border-color:var(--surface-border)">Dev Tools</button>
-          <button onclick="logout()" class="text-xs px-2 py-1 rounded border" style="border-color:var(--error); color:var(--error)">Logout</button>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+      <!-- ── DASHBOARD VIEW ── -->
+      <div class="view active" id="view-dashboard">
+        <div class="view-header">
+          <div class="view-title">Welcome back, <span id="dash-name">User</span> ⚡</div>
+          <div class="view-sub" id="dash-sub">Your AI-powered career command center</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Roadmaps Created</div>
+            <div class="stat-value purple" id="stat-roadmaps">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">AI Queries Used</div>
+            <div class="stat-value teal" id="stat-queries">0 / 5</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Skill Gap Score</div>
+            <div class="stat-value" id="stat-gap">—</div>
+          </div>
+        </div>
+        <div id="roadmap-list-container">
+          <div style="color:var(--text2);font-size:0.9rem;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;text-align:center" id="empty-state">
+            <div style="font-size:2rem;margin-bottom:12px">🗺️</div>
+            <div style="font-weight:600;margin-bottom:6px">No roadmaps yet</div>
+            <div style="font-size:0.85rem;margin-bottom:1.2rem">Generate your first AI career roadmap to get started</div>
+            <button class="btn-next" onclick="showView('generate')">Generate Roadmap →</button>
+          </div>
+          <div class="roadmap-list" id="roadmap-list" style="display:none"></div>
         </div>
       </div>
-      
-      <div class="px-6 mb-6">
-        <h2 class="font-mono text-xl font-bold" id="home-hero">Loading...</h2>
-        <p class="text-sm" style="color:var(--text-secondary)" id="home-sub">Generating roadmap...</p>
-      </div>
 
-      <div class="px-6" id="timeline-area">
-        <!-- Dynamic content -->
-      </div>
-    </div>
+      <!-- ── GENERATE VIEW ── -->
+      <div class="view" id="view-generate">
+        <div class="view-header">
+          <div class="view-title">Generate <span>Roadmap</span></div>
+          <div class="view-sub">AI creates your personalised career plan in seconds</div>
+        </div>
 
-  </div>
-
-  <script>
-    const API = "http://localhost:8000";
-    let currentStep = 1;
-    let state = { user: null, skills: [], role: "", target: "" };
-    const skillsList = ["Python", "React", "SQL", "Node.js", "Docker", "AWS", "Java", "Excel", "Leadership"];
-
-    // --- UTILS ---
-    function $(id) { return document.getElementById(id); }
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); $(id).classList.add('active'); }
-    
-    function updateJsonViewer(data) {
-      $('json-display').innerText = JSON.stringify(data, null, 2);
-    }
-    
-    function toggleViewer() { $('response-viewer').classList.toggle('open'); }
-
-    // --- AUTH FLOW ---
-    async function handleLogin() {
-      const email = $('login-email').value;
-      const pass = $('login-pass').value;
-      
-      try {
-        const res = await fetch(`${API}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password: pass })
-        });
-
-        const data = await res.json();
-        updateJsonViewer(data); // Show response in explorer
-
-        if (!res.ok) {
-          $('login-error').innerText = data.detail || "Login failed";
-          $('login-error').classList.remove('hidden');
-          return;
-        }
-
-        processAuthResponse(data);
-      } catch (e) {
-        $('login-error').innerText = "Network Error. Is backend running?";
-        $('login-error').classList.remove('hidden');
-      }
-    }
-
-    async function handleGoogleLogin() {
-      // Simulating Google Token receipt
-      const res = await fetch(`${API}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: "mock.google.token" })
-      });
-      const data = await res.json();
-      updateJsonViewer(data);
-      processAuthResponse(data);
-    }
-
-    function processAuthResponse(data) {
-      // 1. Store Session
-      localStorage.setItem('session', JSON.stringify(data.session));
-      state.user = data.db_user;
-
-      // 2. Check Onboarding Flag
-      if (data.db_user.onboarding_complete) {
-        showScreen('home-screen');
-        fetchRoadmap(); // Fetch existing roadmap or generate
-      } else {
-        showScreen('onboarding-screen');
-        initSkills();
-      }
-    }
-
-    function logout() {
-      localStorage.clear();
-      showScreen('login-screen');
-    }
-
-    // --- ONBOARDING ---
-    function initSkills() {
-      const container = $('skills-container');
-      container.innerHTML = skillsList.map(s => `<button class="chip" onclick="toggleSkill(this, '${s}')">${s}</button>`).join('');
-    }
-
-    function toggleSkill(el, skill) {
-      el.classList.toggle('selected');
-      if (state.skills.includes(skill)) state.skills = state.skills.filter(s => s !== skill);
-      else state.skills.push(skill);
-    }
-
-    function setRole(el) {
-      $('role-input').value = el.innerText;
-      state.role = el.innerText;
-      document.querySelectorAll('#step-1 .chip').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-    }
-
-    function changeStep(dir) {
-      currentStep += dir;
-      document.querySelectorAll('[id^="step-"]').forEach(s => s.classList.add('hidden'));
-      $(`step-${currentStep}`).classList.remove('hidden');
-      
-      // Progress bar logic
-      const bars = $('progress-bar').children;
-      for(let i=0; i<bars.length; i++) bars[i].style.background = i < currentStep ? 'var(--primary)' : 'var(--surface-border)';
-
-      $('back-btn').style.visibility = currentStep > 1 ? 'visible' : 'hidden';
-
-      if (currentStep === 4) {
-        // Finish Onboarding
-        completeOnboarding();
-      }
-    }
-
-    async function completeOnboarding() {
-      state.target = $('target-select').value;
-      showScreen('home-screen');
-      
-      // Call Roadmap API
-      await fetchRoadmap();
-      
-      // Mock update DB flag
-      if(state.user) state.user.onboarding_complete = true;
-    }
-
-    // --- ROADMAP ---
-    async function fetchRoadmap() {
-      $('home-sub').innerText = "Generating your AI roadmap...";
-      
-      try {
-        const res = await fetch(`${API}/generate-roadmap`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            currentRole: state.role || "Software Engineer",
-            skills: state.skills.length ? state.skills : ["Python"],
-            experienceYears: "1-3",
-            targetRole: state.target || "Senior Engineer",
-            industry: "Tech",
-            city: "Bangalore",
-            goalType: "Promotion",
-            tier: "free"
-          })
-        });
-        
-        const data = await res.json();
-        updateJsonViewer(data); // Update explorer
-        renderRoadmap(data);
-      } catch(e) {
-        console.error(e);
-      }
-    }
-
-    function renderRoadmap(data) {
-      $('home-hero').innerText = `Path to ${data.target_role || 'Next Level'}`;
-      $('home-sub').innerText = data.summary || "Here is your plan.";
-      
-      const area = $('timeline-area');
-      area.innerHTML = `<div class="timeline-line"></div>`;
-      
-      (data.phases || []).forEach((phase, i) => {
-        const isLocked = i > 0; // Lock phases after first for Free user
-        area.innerHTML += `
-          <div class="flex gap-4 mb-6 relative">
-            <div class="node ${isLocked ? 'locked' : ''}">${isLocked ? '🔒' : phase.phase_number}</div>
-            <div class="card p-4 flex-1">
-              <div class="flex justify-between mb-2">
-                <h3 class="font-bold">${phase.title}</h3>
-                <span class="text-xs" style="color:var(--secondary)">${phase.duration}</span>
-              </div>
-              <p class="text-xs mb-2" style="color:var(--text-secondary)">${phase.focus}</p>
-              <div class="flex gap-2 flex-wrap">
-                ${phase.skills.map(s => `<span class="text-xs px-2 py-1 rounded" style="background:var(--bg)">${s}</span>`).join('')}
-              </div>
-              ${isLocked ? `<button class="btn-primary mt-4 text-xs py-2">Unlock with Starter</button>` : ''}
+        <div class="generate-form" id="generate-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Current Role</label>
+              <input class="field-input" type="text" id="gen-current-role" placeholder="Software Engineer"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Role</label>
+              <select class="form-select" id="gen-target-role">
+                <option value="">Select target...</option>
+                <option>Data Scientist</option><option>Machine Learning Engineer</option>
+                <option>Product Manager</option><option>Full Stack Developer</option>
+                <option>DevOps Engineer</option><option>Cloud Architect</option>
+                <option>Cybersecurity Analyst</option><option>UI/UX Designer</option>
+                <option>Business Analyst</option><option>Management Consultant</option>
+                <option>IAS Officer</option><option>Startup Founder</option>
+                <option>Research Scientist</option><option>Digital Marketer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Experience</label>
+              <select class="form-select" id="gen-experience">
+                <option>Fresher (0–1 yr)</option><option>1–3 years</option>
+                <option>3–5 years</option><option>5+ years</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <select class="form-select" id="gen-city">
+                <option>Bangalore</option><option>Mumbai</option><option>Delhi</option>
+                <option>Pune</option><option>Hyderabad</option><option>Chennai</option><option>Remote</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">Your Current Skills (comma separated)</label>
+              <input class="field-input" type="text" id="gen-skills" placeholder="Python, SQL, React, Git..."/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Industry</label>
+              <select class="form-select" id="gen-industry">
+                <option>Tech / Software</option><option>Finance / Banking</option>
+                <option>Healthcare</option><option>Government / PSU</option>
+                <option>Startups</option><option>E-commerce</option><option>Consulting</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Primary Goal</label>
+              <select class="form-select" id="gen-goal">
+                <option>Switch careers</option><option>Get promoted</option>
+                <option>Crack FAANG</option><option>Go abroad</option>
+                <option>Govt job</option><option>Start a startup</option><option>Freelance</option>
+              </select>
             </div>
           </div>
-        `;
-      });
+          <button class="btn-primary" onclick="generateRoadmap()" id="gen-btn">✦ Generate My Roadmap</button>
+        </div>
+
+        <div class="generating-overlay" id="gen-overlay">
+          <div class="spinner"></div>
+          <div class="gen-title">Crafting your roadmap...</div>
+          <div class="gen-sub">CareerGrid AI is analysing your profile</div>
+          <div class="gen-steps">
+            <div class="gen-step current" id="gstep-0"><div class="gen-step-dot"></div> Analysing skill gaps</div>
+            <div class="gen-step" id="gstep-1"><div class="gen-step-dot"></div> Building 4-phase roadmap</div>
+            <div class="gen-step" id="gstep-2"><div class="gen-step-dot"></div> Finding Indian certifications</div>
+            <div class="gen-step" id="gstep-3"><div class="gen-step-dot"></div> Adding salary benchmarks</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ROADMAP DETAIL VIEW ── -->
+      <div class="view" id="view-detail">
+        <button class="back-btn" onclick="showView('dashboard')">← Back to Dashboard</button>
+        <div id="detail-content"></div>
+      </div>
+
+      <!-- ── EXPLORE VIEW ── -->
+      <div class="view" id="view-explore">
+        <div class="view-header">
+          <div class="view-title">Explore <span>Career Paths</span></div>
+          <div class="view-sub">Curated exclusive roadmaps for India's top career destinations</div>
+        </div>
+        <div class="explore-grid">
+          <div class="explore-card" onclick="generateExclusive('FAANG Software Engineer')">
+            <div class="explore-card-icon">🏢</div>
+            <div class="explore-card-title">FAANG SDE India Track</div>
+            <div class="explore-card-desc">Google, Meta, Amazon, Microsoft India — crack the top 1% engineering roles</div>
+          </div>
+          <div class="explore-card" onclick="generateExclusive('Data Scientist at Indian Unicorn')">
+            <div class="explore-card-icon">🦄</div>
+            <div class="explore-card-title">Indian Unicorn Data Scientist</div>
+            <div class="explore-card-desc">Zomato, CRED, Meesho, Razorpay — build ML for India-scale products</div>
+          </div>
+          <div class="explore-card" onclick="generateExclusive('Product Manager at Indian Startup')">
+            <div class="explore-card-icon">📱</div>
+            <div class="explore-card-title">Product Manager — Startup Track</div>
+            <div class="explore-card-desc">From engineer or MBA to PM at India's fastest-growing startups</div>
+          </div>
+          <div class="explore-card" onclick="generateExclusive('Government IT Officer NIC CDAC DRDO')">
+            <div class="explore-card-icon">🏛️</div>
+            <div class="explore-card-title">Govt IT — NIC / CDAC / DRDO</div>
+            <div class="explore-card-desc">Secure, high-impact government technology career paths in India</div>
+          </div>
+          <div class="explore-card" onclick="generateExclusive('DevOps Engineer at funded startup India')">
+            <div class="explore-card-icon">⚙️</div>
+            <div class="explore-card-title">DevOps at Series A Startup</div>
+            <div class="explore-card-desc">Build cloud infra for India's next generation of funded tech companies</div>
+          </div>
+          <div class="explore-card" onclick="generateExclusive('High-income Freelance Developer India Toptal Upwork')">
+            <div class="explore-card-icon">💻</div>
+            <div class="explore-card-title">High-Income Freelance Tech</div>
+            <div class="explore-card-desc">Toptal, Upwork — earn in USD from India. Full strategy and client acquisition.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE VIEW ── -->
+      <div class="view" id="view-profile">
+        <div class="view-header">
+          <div class="view-title">Your <span>Profile</span></div>
+        </div>
+        <div class="profile-header">
+          <div class="profile-avatar" id="profile-avatar-large">U</div>
+          <div>
+            <div class="profile-name" id="profile-name-text">User</div>
+            <div class="profile-email" id="profile-email-text">user@gmail.com</div>
+            <span class="plan-badge plan-free" id="profile-plan-badge">Free Plan</span>
+          </div>
+        </div>
+        <div class="usage-section">
+          <div class="usage-label">AI Query Usage This Month</div>
+          <div class="usage-bar-wrap">
+            <div class="usage-bar-fill" id="usage-bar" style="width:0%"></div>
+          </div>
+          <div class="usage-text" id="usage-text">0 / 5 queries used</div>
+        </div>
+        <div class="plan-section">
+          <div style="font-family:var(--font-head);font-size:0.9rem;margin-bottom:6px">Current Plan</div>
+          <div style="color:var(--text2);font-size:0.85rem;margin-bottom:12px">Upgrade to unlock unlimited roadmaps, salary data, exclusive paths and more</div>
+          <button class="btn-next" onclick="showView('paywall')">View Plans & Upgrade →</button>
+        </div>
+      </div>
+
+      <!-- ── PAYWALL VIEW ── -->
+      <div class="view" id="view-paywall">
+        <div class="view-header">
+          <div class="view-title">Choose Your <span>Plan</span></div>
+          <div class="view-sub">Google Play Billing — cancel anytime, auto-renews</div>
+        </div>
+        <div class="paywall-toggle">
+          <span>Monthly</span>
+          <div class="toggle-switch" id="billing-toggle" onclick="toggleBilling()"></div>
+          <span>Annual <span style="color:var(--teal2);font-size:0.82rem">save up to 33%</span></span>
+        </div>
+        <div class="plans-grid">
+          <!-- Free -->
+          <div class="plan-card">
+            <div class="plan-card-name">FREE</div>
+            <div class="plan-card-price">₹0 <span>/forever</span></div>
+            <div class="plan-card-save"> </div>
+            <ul class="plan-features">
+              <li class="plan-feat"><span class="feat-check">✓</span> 1 AI roadmap</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> 5 queries / month</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> Phase 1 only</li>
+              <li class="plan-feat"><span class="feat-x">✗</span> PDF export</li>
+              <li class="plan-feat"><span class="feat-x">✗</span> Salary data</li>
+              <li class="plan-feat"><span class="feat-x">✗</span> Exclusive paths</li>
+            </ul>
+            <button class="btn-subscribe" disabled>Current Plan</button>
+          </div>
+          <!-- Starter -->
+          <div class="plan-card popular">
+            <div class="popular-label">MOST POPULAR</div>
+            <div class="plan-card-name">STARTER</div>
+            <div class="plan-card-price" id="starter-price">₹99 <span>/month</span></div>
+            <div class="plan-card-save" id="starter-save">₹799/year — save ₹389</div>
+            <ul class="plan-features">
+              <li class="plan-feat"><span class="feat-check">✓</span> 5 roadmaps</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> 50 queries / month</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> All 4 phases</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> PDF export</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> India job market data</li>
+              <li class="plan-feat"><span class="feat-x">✗</span> Exclusive paths</li>
+            </ul>
+            <button class="btn-subscribe primary" onclick="showToast('Google Play billing opens on Android app','info')">Subscribe via Play Store</button>
+          </div>
+          <!-- Pro -->
+          <div class="plan-card">
+            <div class="plan-card-name">PRO</div>
+            <div class="plan-card-price" id="pro-price">₹299 <span>/month</span></div>
+            <div class="plan-card-save" id="pro-save">₹2,499/year — save ₹1,089</div>
+            <ul class="plan-features">
+              <li class="plan-feat"><span class="feat-check">✓</span> Unlimited roadmaps</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> Unlimited queries</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> FAANG & unicorn paths</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> City-wise salary data</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> AI resume review</li>
+              <li class="plan-feat"><span class="feat-x">✗</span> Abroad paths</li>
+            </ul>
+            <button class="btn-subscribe" onclick="showToast('Google Play billing opens on Android app','info')">Subscribe via Play Store</button>
+          </div>
+          <!-- Elite -->
+          <div class="plan-card">
+            <div class="plan-card-name">ELITE</div>
+            <div class="plan-card-price" id="elite-price">₹599 <span>/month</span></div>
+            <div class="plan-card-save" id="elite-save">₹4,999/year — save ₹2,189</div>
+            <ul class="plan-features">
+              <li class="plan-feat"><span class="feat-check">✓</span> Everything in Pro</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> AI mock interviews</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> Abroad paths (US/EU)</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> Team (3 members)</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> Priority AI speed</li>
+              <li class="plan-feat"><span class="feat-check">✓</span> Startup/freelance paths</li>
+            </ul>
+            <button class="btn-subscribe" onclick="showToast('Google Play billing opens on Android app','info')">Subscribe via Play Store</button>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1.5rem;font-size:0.78rem;color:var(--text2)">
+          Subscription auto-renews. Cancel anytime in Google Play Store settings.
+        </div>
+      </div>
+
+    </div><!-- end main-content -->
+  </div><!-- end app-layout -->
+</div><!-- end screen-app -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIG — REPLACE WITH YOUR NEW KEYS AFTER ROTATING
+// ═══════════════════════════════════════════════════════
+const CONFIG = {
+  GOOGLE_CLIENT_ID: 'YOUR_NEW_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+  CEREBRAS_API_KEY: 'YOUR_NEW_CEREBRAS_API_KEY',
+  CEREBRAS_API_URL: 'https://api.cerebras.ai/v1/chat/completions',
+  CEREBRAS_MODEL:   'llama-3.1-70b',
+};
+
+// ═══════════════════════════════════════════════════════
+//  APP STATE
+// ═══════════════════════════════════════════════════════
+const STATE = {
+  user:      null,   // { id, name, email, initials, provider }
+  plan:      'free', // free | starter | pro | elite
+  profile:   null,   // onboarding answers
+  roadmaps:  [],     // generated roadmaps
+  queries:   0,      // used this month
+  queryLimits: { free:5, starter:50, pro:-1, elite:-1 },
+  annualBilling: false,
+  currentRoadmap: null,
+};
+
+// ─── Local persistence ───
+function saveState() {
+  const s = { user: STATE.user, plan: STATE.plan, profile: STATE.profile,
+              roadmaps: STATE.roadmaps, queries: STATE.queries };
+  localStorage.setItem('cg_state', JSON.stringify(s));
+}
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('cg_state') || 'null');
+    if (s) { Object.assign(STATE, s); return true; }
+  } catch(e) {}
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOOGLE SIGN-IN SETUP
+// ═══════════════════════════════════════════════════════
+function initGoogleSignIn() {
+  if (!window.google) { setTimeout(initGoogleSignIn, 300); return; }
+  google.accounts.id.initialize({
+    client_id: CONFIG.GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('google-signin-btn'),
+    { theme: 'filled_black', size: 'large', width: 320, text: 'signin_with', shape: 'rectangular' }
+  );
+}
+
+function handleGoogleCredential(response) {
+  try {
+    // Decode JWT payload (base64 middle part)
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const user = {
+      id:       payload.sub,
+      name:     payload.name || payload.email.split('@')[0],
+      email:    payload.email,
+      picture:  payload.picture || null,
+      initials: (payload.name || payload.email).split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),
+      provider: 'google',
+    };
+    loginSuccess(user);
+  } catch(e) {
+    showAuthError('Google sign-in failed. Please try again.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  EMAIL AUTH (simulated — replace with Supabase in prod)
+// ═══════════════════════════════════════════════════════
+function handleEmailLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showAuthError('Please enter email and password.'); return; }
+  if (!email.includes('@')) { showAuthError('Invalid email address.'); return; }
+  if (password.length < 6) { showAuthError('Password too short.'); return; }
+
+  // Check local "accounts" store
+  const accounts = JSON.parse(localStorage.getItem('cg_accounts') || '{}');
+  if (!accounts[email]) { showAuthError('Account not found. Please sign up first.'); return; }
+  if (accounts[email].password !== btoa(password)) { showAuthError('Incorrect password.'); return; }
+
+  loginSuccess(accounts[email].user);
+}
+
+function handleEmailSignup() {
+  const name     = document.getElementById('signup-name').value.trim();
+  const email    = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  if (!name)               { showAuthError('Please enter your name.'); return; }
+  if (!email.includes('@')){ showAuthError('Invalid email address.'); return; }
+  if (password.length < 8) { showAuthError('Password must be at least 8 characters.'); return; }
+
+  const accounts = JSON.parse(localStorage.getItem('cg_accounts') || '{}');
+  if (accounts[email]) { showAuthError('Email already registered. Please sign in.'); return; }
+
+  const user = {
+    id:       'local_' + Date.now(),
+    name,
+    email,
+    initials: name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),
+    provider: 'email',
+  };
+  accounts[email] = { password: btoa(password), user };
+  localStorage.setItem('cg_accounts', JSON.stringify(accounts));
+  loginSuccess(user);
+}
+
+function loginSuccess(user) {
+  STATE.user = user;
+  const existing = JSON.parse(localStorage.getItem('cg_state') || 'null');
+  if (existing && existing.user && existing.user.id === user.id) {
+    loadState();
+    STATE.user = user; // refresh user object
+  }
+  saveState();
+  const needsOnboarding = !STATE.profile;
+  if (needsOnboarding) {
+    showScreen('onboarding');
+  } else {
+    enterApp();
+  }
+}
+
+function handleLogout() {
+  if (window.google) google.accounts.id.disableAutoSelect();
+  saveState();
+  STATE.user = null;
+  document.getElementById('user-menu').classList.remove('open');
+  showScreen('login');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+function showLogin()  { document.getElementById('form-login').style.display='block'; document.getElementById('form-signup').style.display='none'; document.getElementById('auth-error').style.display='none'; }
+function showSignup() { document.getElementById('form-login').style.display='none'; document.getElementById('form-signup').style.display='block'; document.getElementById('auth-error').style.display='none'; }
+
+// ═══════════════════════════════════════════════════════
+//  SCREENS
+// ═══════════════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function enterApp() {
+  updateTopbar();
+  updateDashboard();
+  showScreen('app');
+  showView('dashboard');
+}
+
+// ═══════════════════════════════════════════════════════
+//  VIEWS
+// ═══════════════════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const navEl = document.getElementById('nav-' + name);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('user-menu').classList.remove('open');
+  if (name === 'dashboard') updateDashboard();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOPBAR / PROFILE UPDATES
+// ═══════════════════════════════════════════════════════
+function updateTopbar() {
+  const u = STATE.user;
+  if (!u) return;
+  document.getElementById('user-initials').textContent = u.initials || 'U';
+  document.getElementById('menu-email').textContent    = u.email;
+  document.getElementById('profile-avatar-large').textContent = u.initials || 'U';
+  document.getElementById('profile-name-text').textContent    = u.name;
+  document.getElementById('profile-email-text').textContent   = u.email;
+  document.getElementById('dash-name').textContent = u.name.split(' ')[0];
+
+  const planMap = { free:'Free', starter:'Starter', pro:'Pro', elite:'Elite' };
+  const badgeEl = document.getElementById('topbar-plan-badge');
+  badgeEl.textContent  = planMap[STATE.plan] || 'Free';
+  badgeEl.className    = 'plan-badge plan-' + STATE.plan;
+  document.getElementById('profile-plan-badge').textContent = (planMap[STATE.plan]||'Free') + ' Plan';
+  document.getElementById('profile-plan-badge').className   = 'plan-badge plan-' + STATE.plan;
+
+  const limit   = STATE.queryLimits[STATE.plan];
+  const limitTx = limit === -1 ? '∞' : limit;
+  document.getElementById('stat-queries').textContent = STATE.queries + ' / ' + limitTx;
+  document.getElementById('usage-text').textContent   = STATE.queries + ' / ' + limitTx + ' queries used';
+  const pct = limit === -1 ? 10 : Math.min(100, (STATE.queries / limit) * 100);
+  document.getElementById('usage-bar').style.width = pct + '%';
+}
+
+function updateDashboard() {
+  updateTopbar();
+  document.getElementById('stat-roadmaps').textContent = STATE.roadmaps.length;
+  const hasRoadmaps = STATE.roadmaps.length > 0;
+  document.getElementById('empty-state').style.display    = hasRoadmaps ? 'none' : 'block';
+  document.getElementById('roadmap-list').style.display   = hasRoadmaps ? 'flex' : 'none';
+
+  if (hasRoadmaps) {
+    const last = STATE.roadmaps[STATE.roadmaps.length - 1];
+    const score = last.skill_gap_score;
+    document.getElementById('stat-gap').textContent = score ? score + '%' : '—';
+    renderRoadmapList();
+  }
+}
+
+function renderRoadmapList() {
+  const list = document.getElementById('roadmap-list');
+  list.innerHTML = '';
+  [...STATE.roadmaps].reverse().forEach((rm, i) => {
+    const idx = STATE.roadmaps.length - 1 - i;
+    const unlockedPhases = rm.phases ? rm.phases.filter(p => !p.is_locked).length : 0;
+    const totalPhases    = rm.phases ? rm.phases.length : 4;
+    const card = document.createElement('div');
+    card.className = 'roadmap-card';
+    card.onclick = () => openRoadmapDetail(idx);
+    card.innerHTML = `
+      <div class="roadmap-card-header">
+        <div>
+          <div class="roadmap-card-title">${rm.target_role}</div>
+          <div class="roadmap-card-meta">From: ${rm.current_role || 'Your current role'} · ${rm.generated_at ? new Date(rm.generated_at).toLocaleDateString('en-IN') : 'Recently'}</div>
+        </div>
+        <div class="roadmap-card-badge">${rm.estimated_transition_months || '?'} months</div>
+      </div>
+      <div class="phase-pills">
+        ${Array.from({length:4},(_,j)=>`<div class="phase-pill ${j<unlockedPhases?'unlocked':'locked'}">Phase ${j+1}</div>`).join('')}
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  ONBOARDING
+// ═══════════════════════════════════════════════════════
+let obStep = 0;
+let selectedExp = null;
+let selectedSkills = [];
+let selectedGoals = [];
+
+const stepTitles = [
+  "What's your current role?",
+  "What skills do you already have?",
+  "Where do you want to go?",
+  "Almost done — preferences"
+];
+const stepSubs = [
+  "Tell us where you are right now",
+  "Select all skills that apply to you",
+  "Choose your target career destination",
+  "Help us personalise your roadmap"
+];
+
+function updateProgressBar() {
+  for (let i = 0; i < 4; i++) {
+    const seg = document.getElementById('seg' + i);
+    seg.className = 'progress-seg' + (i < obStep ? ' done' : i === obStep ? ' active' : '');
+  }
+  document.getElementById('step-title').textContent = stepTitles[obStep];
+  document.getElementById('step-sub').textContent   = stepSubs[obStep];
+  document.getElementById('btn-back').style.visibility = obStep === 0 ? 'hidden' : 'visible';
+  document.getElementById('btn-next').textContent = obStep === 3 ? 'Generate Roadmap ✦' : 'Next →';
+}
+
+function selectExp(btn, val) {
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedExp = val;
+}
+
+function toggleSkill(chip) { chip.classList.toggle('selected'); selectedSkills = [...document.querySelectorAll('#skills-chips .chip.selected')].map(c=>c.textContent); }
+function toggleGoal(chip)  { chip.classList.toggle('selected'); selectedGoals  = [...document.querySelectorAll('#goal-chips .chip.selected')].map(c=>c.textContent); }
+
+function nextStep() {
+  if (obStep === 0) {
+    if (!document.getElementById('ob-current-role').value.trim()) { showToast('Please enter your current role','error'); return; }
+    if (!selectedExp) { showToast('Please select your experience level','error'); return; }
+  }
+  if (obStep === 1 && selectedSkills.length === 0) { showToast('Please select at least one skill','error'); return; }
+  if (obStep === 2) {
+    if (!document.getElementById('ob-target-role').value) { showToast('Please select a target role','error'); return; }
+    if (!document.getElementById('ob-industry').value)    { showToast('Please select an industry','error'); return; }
+  }
+  if (obStep === 3) {
+    if (!document.getElementById('ob-city').value) { showToast('Please select a city','error'); return; }
+    // Save profile and go to app
+    STATE.profile = {
+      current_role:     document.getElementById('ob-current-role').value.trim(),
+      experience_years: parseInt(selectedExp || '0'),
+      experience_label: ['Fresher','1–3 years','3–5 years','5+ years'][parseInt((selectedExp||0)/2)] || 'Fresher',
+      skills:           selectedSkills,
+      target_role:      document.getElementById('ob-target-role').value,
+      industry:         document.getElementById('ob-industry').value,
+      city:             document.getElementById('ob-city').value,
+      goal_type:        selectedGoals,
+    };
+    saveState();
+    // Pre-fill generate form
+    document.getElementById('gen-current-role').value = STATE.profile.current_role;
+    document.getElementById('gen-target-role').value  = STATE.profile.target_role;
+    document.getElementById('gen-skills').value       = STATE.profile.skills.join(', ');
+    enterApp();
+    showView('generate');
+    return;
+  }
+  document.getElementById('step-' + obStep).classList.remove('active');
+  obStep++;
+  document.getElementById('step-' + obStep).classList.add('active');
+  updateProgressBar();
+}
+
+function prevStep() {
+  if (obStep === 0) return;
+  document.getElementById('step-' + obStep).classList.remove('active');
+  obStep--;
+  document.getElementById('step-' + obStep).classList.add('active');
+  updateProgressBar();
+}
+
+// ═══════════════════════════════════════════════════════
+//  CEREBRAS AI — ROADMAP GENERATION
+// ═══════════════════════════════════════════════════════
+async function generateRoadmap() {
+  const currentRole = document.getElementById('gen-current-role').value.trim();
+  const targetRole  = document.getElementById('gen-target-role').value;
+  const skills      = document.getElementById('gen-skills').value;
+  const experience  = document.getElementById('gen-experience').value;
+  const city        = document.getElementById('gen-city').value;
+  const industry    = document.getElementById('gen-industry').value;
+  const goal        = document.getElementById('gen-goal').value;
+
+  if (!currentRole) { showToast('Please enter your current role', 'error'); return; }
+  if (!targetRole)  { showToast('Please select your target role', 'error'); return; }
+
+  const limit = STATE.queryLimits[STATE.plan];
+  if (limit !== -1 && STATE.queries >= limit) {
+    showToast('Query limit reached. Upgrade your plan!', 'error');
+    setTimeout(() => showView('paywall'), 1500);
+    return;
+  }
+
+  // Show generating overlay
+  document.getElementById('generate-form').style.display  = 'none';
+  document.getElementById('gen-overlay').classList.add('active');
+  animateGenSteps();
+
+  const prompt = buildRoadmapPrompt({ currentRole, targetRole, skills, experience, city, industry, goal, tier: STATE.plan });
+
+  try {
+    const response = await fetch(CONFIG.CEREBRAS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + CONFIG.CEREBRAS_API_KEY,
+      },
+      body: JSON.stringify({
+        model:      CONFIG.CEREBRAS_MODEL,
+        max_tokens: 4096,
+        temperature: 0.7,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user',   content: prompt },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'API error ' + response.status);
     }
 
-    // Check session on load
-    const savedSession = localStorage.getItem('session');
-    if(savedSession) {
-      // In real app, verify token with backend here
-      showScreen('home-screen');
-      fetchRoadmap();
+    const data    = await response.json();
+    const rawText = data.choices?.[0]?.message?.content || '';
+    const roadmap = parseRoadmapJSON(rawText);
+
+    roadmap.current_role  = currentRole;
+    roadmap.generated_at  = new Date().toISOString();
+    roadmap.tier_used     = STATE.plan;
+
+    // Apply tier gating
+    if (STATE.plan === 'free') {
+      roadmap.phases = roadmap.phases.map((p, i) => i === 0
+        ? { ...p, is_locked: false }
+        : { ...p, is_locked: true, lock_reason: 'Upgrade to Starter ₹99/mo to unlock' }
+      );
+      roadmap.salary_range_inr = null;
     }
-  </script>
+
+    STATE.roadmaps.push(roadmap);
+    STATE.queries++;
+    saveState();
+
+    document.getElementById('gen-overlay').classList.remove('active');
+    document.getElementById('generate-form').style.display = 'block';
+
+    openRoadmapDetail(STATE.roadmaps.length - 1);
+    showView('detail');
+    updateTopbar();
+    showToast('Roadmap generated successfully!', 'success');
+
+  } catch(err) {
+    document.getElementById('gen-overlay').classList.remove('active');
+    document.getElementById('generate-form').style.display = 'block';
+    showToast('Error: ' + err.message, 'error');
+    console.error('Cerebras error:', err);
+  }
+}
+
+async function generateExclusive(roleHint) {
+  document.getElementById('gen-current-role').value = STATE.profile?.current_role || 'Professional';
+  document.getElementById('gen-target-role').value  = roleHint.split(' ')[0] + ' ' + (roleHint.split(' ')[1] || '');
+  document.getElementById('gen-skills').value       = STATE.profile?.skills?.join(', ') || 'Python, SQL';
+  showView('generate');
+  showToast('Pre-filled for ' + roleHint.split(' ').slice(0,3).join(' '), 'info');
+}
+
+const SYSTEM_PROMPT = `You are CareerGrid AI, an expert Indian career strategist. You have deep knowledge of the Indian job market, Indian companies, Indian salaries, NPTEL/IIT courses, and India-specific career paths.
+
+Return ONLY a valid JSON object — no markdown fences, no explanation, no text before or after the JSON. The JSON must exactly match the schema.
+
+CRITICAL: Your JSON must be complete and valid. Use double quotes for all strings. No trailing commas.`;
+
+function buildRoadmapPrompt({ currentRole, targetRole, skills, experience, city, industry, goal, tier }) {
+  return `Generate a detailed career roadmap for this Indian professional:
+- Current role: ${currentRole}
+- Current skills: ${skills || 'Not specified'}
+- Experience: ${experience}
+- Target role: ${targetRole}
+- Industry: ${industry}
+- City: ${city}
+- Primary goal: ${goal}
+- Plan tier: ${tier}
+
+Return this EXACT JSON schema (no extra text, pure JSON only):
+{
+  "summary": "2-sentence personalised summary mentioning their background and path",
+  "target_role": "${targetRole}",
+  "estimated_transition_months": 12,
+  "skill_gap_score": 55,
+  "missing_critical_skills": ["skill1", "skill2", "skill3"],
+  "phases": [
+    {
+      "phase_number": 1,
+      "title": "Phase title",
+      "duration": "0–3 months",
+      "focus": "One-line focus",
+      "is_locked": false,
+      "skills": ["skill1", "skill2", "skill3", "skill4", "skill5"],
+      "certifications": [
+        {"name": "cert name", "provider": "NPTEL / IIT / Coursera / Udemy", "cost_inr": 0, "is_free": true, "duration_weeks": 8, "link": "https://nptel.ac.in"},
+        {"name": "cert name 2", "provider": "Provider", "cost_inr": 2999, "is_free": false, "duration_weeks": 6, "link": "https://coursera.org"}
+      ],
+      "projects": [
+        {"title": "Project title", "description": "2-sentence description relevant to India context", "difficulty": "Beginner", "tech_stack": ["tool1", "tool2"]},
+        {"title": "Project 2", "description": "Description", "difficulty": "Intermediate", "tech_stack": ["tool1"]}
+      ],
+      "salary_range_inr": {
+        "bangalore": {"min": 600000, "max": 1000000},
+        "mumbai": {"min": 550000, "max": 950000},
+        "delhi": {"min": 520000, "max": 900000},
+        "pune": {"min": 500000, "max": 850000},
+        "hyderabad": {"min": 530000, "max": 900000},
+        "remote": {"min": 400000, "max": 700000}
+      },
+      "top_companies_india": ["Company1", "Company2", "Company3", "Company4"],
+      "job_titles": ["Title1", "Title2", "Title3"]
+    },
+    {
+      "phase_number": 2,
+      "title": "Phase 2 title",
+      "duration": "3–6 months",
+      "focus": "Focus area",
+      "is_locked": false,
+      "skills": ["skill1", "skill2", "skill3", "skill4"],
+      "certifications": [{"name": "cert", "provider": "provider", "cost_inr": 0, "is_free": true, "duration_weeks": 4, "link": "https://swayam.gov.in"}],
+      "projects": [{"title": "proj", "description": "desc", "difficulty": "Intermediate", "tech_stack": ["tool"]}],
+      "salary_range_inr": {"bangalore": {"min": 800000, "max": 1400000}, "mumbai": {"min": 750000, "max": 1300000}, "delhi": {"min": 700000, "max": 1200000}, "pune": {"min": 680000, "max": 1100000}, "hyderabad": {"min": 720000, "max": 1250000}, "remote": {"min": 600000, "max": 1000000}},
+      "top_companies_india": ["Co1", "Co2", "Co3"],
+      "job_titles": ["Title1", "Title2"]
+    },
+    {
+      "phase_number": 3,
+      "title": "Phase 3 title",
+      "duration": "6–12 months",
+      "focus": "Focus area",
+      "is_locked": false,
+      "skills": ["skill1", "skill2", "skill3"],
+      "certifications": [{"name": "cert", "provider": "provider", "cost_inr": 1999, "is_free": false, "duration_weeks": 10, "link": "https://coursera.org"}],
+      "projects": [{"title": "proj", "description": "desc", "difficulty": "Advanced", "tech_stack": ["tool"]}],
+      "salary_range_inr": {"bangalore": {"min": 1000000, "max": 1800000}, "mumbai": {"min": 950000, "max": 1700000}, "delhi": {"min": 900000, "max": 1600000}, "pune": {"min": 850000, "max": 1500000}, "hyderabad": {"min": 900000, "max": 1650000}, "remote": {"min": 750000, "max": 1300000}},
+      "top_companies_india": ["Co1", "Co2", "Co3"],
+      "job_titles": ["Title1", "Title2"]
+    },
+    {
+      "phase_number": 4,
+      "title": "Phase 4 title",
+      "duration": "12–24 months",
+      "focus": "Focus area",
+      "is_locked": false,
+      "skills": ["skill1", "skill2"],
+      "certifications": [{"name": "cert", "provider": "provider", "cost_inr": 4999, "is_free": false, "duration_weeks": 12, "link": "https://coursera.org"}],
+      "projects": [{"title": "proj", "description": "desc", "difficulty": "Advanced", "tech_stack": ["tool"]}],
+      "salary_range_inr": {"bangalore": {"min": 1500000, "max": 2800000}, "mumbai": {"min": 1400000, "max": 2600000}, "delhi": {"min": 1300000, "max": 2400000}, "pune": {"min": 1200000, "max": 2200000}, "hyderabad": {"min": 1300000, "max": 2500000}, "remote": {"min": 1000000, "max": 2000000}},
+      "top_companies_india": ["Co1", "Co2", "Co3"],
+      "job_titles": ["Title1", "Title2"]
+    }
+  ],
+  "india_specific_tips": ["tip1", "tip2", "tip3"]
+}
+
+IMPORTANT RULES:
+- Use real Indian company names (TCS, Infosys, Wipro, Zomato, Flipkart, CRED, Razorpay, Meesho, PhonePe, Ola, Dream11, Paytm, Juspay, etc.) relevant to the role
+- Prioritise NPTEL, Swayam, IIT courses (mark cost_inr as 0, is_free as true)
+- Projects should have India-context where possible (UPI apps, IPL datasets, Indian e-commerce etc.)
+- Salary ranges must reflect real Indian 2024-25 market
+- skill_gap_score: integer 0-100 representing how ready the person is for the target role`;
+}
+
+function parseRoadmapJSON(raw) {
+  // Strip markdown fences if present
+  let text = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+  // Find JSON boundaries
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON found in AI response');
+  text = text.slice(start, end + 1);
+  return JSON.parse(text);
+}
+
+// ═══════════════════════════════════════════════════════
+//  ROADMAP DETAIL RENDERER
+// ═══════════════════════════════════════════════════════
+function openRoadmapDetail(idx) {
+  STATE.currentRoadmap = idx;
+  const rm = STATE.roadmaps[idx];
+  if (!rm) return;
+
+  const container = document.getElementById('detail-content');
+  const maxSalary = 3000000;
+
+  const formatLakh = v => v >= 100000 ? '₹' + (v/100000).toFixed(1) + 'L' : '₹' + v.toLocaleString('en-IN');
+  const diffClass  = d => d === 'Beginner' ? 'diff-beginner' : d === 'Intermediate' ? 'diff-intermediate' : 'diff-advanced';
+
+  let phasesHTML = '';
+  (rm.phases || []).forEach((phase, i) => {
+    const isLocked = phase.is_locked;
+
+    // Skills
+    const skillsHTML = (phase.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('');
+
+    // Certs
+    const certsHTML = (phase.certifications || []).map(c => `
+      <div class="cert-item">
+        <div><div class="cert-name">${c.name}</div><div class="cert-provider">${c.provider} · ${c.duration_weeks || '?'} weeks</div></div>
+        <span class="cert-cost ${c.is_free ? 'free' : 'paid'}">${c.is_free ? 'FREE' : formatLakh(c.cost_inr)}</span>
+      </div>`).join('');
+
+    // Projects
+    const projHTML = (phase.projects || []).map(p => `
+      <div class="project-item">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div class="project-title">${p.title}</div>
+          <span class="diff-badge ${diffClass(p.difficulty)}">${p.difficulty}</span>
+        </div>
+        <div class="project-desc">${p.description}</div>
+        <div class="project-tags">${(p.tech_stack||[]).map(t=>`<span class="project-tag">${t}</span>`).join('')}</div>
+      </div>`).join('');
+
+    // Salary bars
+    const cities = ['bangalore','mumbai','delhi','pune','hyderabad','remote'];
+    const salaryHTML = phase.salary_range_inr ? cities.map(city => {
+      const s   = phase.salary_range_inr[city] || {};
+      const pct = Math.min(100, ((s.max || 0) / maxSalary) * 100);
+      return `<div class="salary-bar-item">
+        <div class="salary-city">${city.charAt(0).toUpperCase()+city.slice(1)}</div>
+        <div class="salary-bar-wrap"><div class="salary-bar-fill" style="width:0%" data-pct="${pct}"></div></div>
+        <div class="salary-range">${formatLakh(s.min||0)} – ${formatLakh(s.max||0)}</div>
+      </div>`;
+    }).join('') : `<div style="text-align:center;padding:1rem;color:var(--text2);font-size:0.85rem">
+      🔒 Salary data available on Starter plan ₹99/mo
+      <br><button class="btn-upgrade" style="margin-top:10px" onclick="showView('paywall')">Unlock</button>
+    </div>`;
+
+    // Companies
+    const companiesHTML = (phase.top_companies_india || []).map(c => `<span class="skill-tag" style="background:rgba(78,205,196,0.08);color:var(--teal2);border-color:rgba(78,205,196,0.2)">${c}</span>`).join('');
+
+    phasesHTML += `
+    <div class="phase-card ${isLocked ? 'locked' : ''}" id="phase-card-${i}">
+      <div class="phase-card-header" onclick="togglePhase(${i})">
+        <div class="phase-num ${isLocked ? 'locked-num' : ''}">${isLocked ? '🔒' : i+1}</div>
+        <div class="phase-header-info">
+          <div class="phase-title">${phase.title || 'Phase ' + (i+1)}</div>
+          <div class="phase-duration">${phase.duration} · ${(phase.skills||[]).length} skills</div>
+        </div>
+        <div class="phase-chevron ${i===0 ? 'open' : ''}" id="chevron-${i}">▼</div>
+      </div>
+      ${isLocked ? `
+        <div class="locked-overlay show">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-msg">${phase.lock_reason || 'Upgrade to unlock this phase'}</div>
+          <button class="btn-upgrade" onclick="showView('paywall')">Upgrade Plan</button>
+        </div>` : `
+        <div class="phase-card-body ${i===0 ? 'open' : ''}" id="body-${i}">
+          <div class="phase-section">
+            <div class="phase-section-title">Skills to learn</div>
+            <div class="skills-chips">${skillsHTML}</div>
+          </div>
+          <div class="phase-section">
+            <div class="phase-section-title">Certifications</div>
+            <div class="cert-list">${certsHTML}</div>
+          </div>
+          <div class="phase-section">
+            <div class="phase-section-title">Projects to build</div>
+            <div class="project-list">${projHTML}</div>
+          </div>
+          <div class="phase-section">
+            <div class="phase-section-title">Salary range (India)</div>
+            <div class="salary-section">${salaryHTML}</div>
+          </div>
+          <div class="phase-section">
+            <div class="phase-section-title">Top companies hiring</div>
+            <div class="skills-chips">${companiesHTML}</div>
+          </div>
+          <div class="phase-section">
+            <div class="phase-section-title">Job titles to target</div>
+            <div class="skills-chips">${(phase.job_titles||[]).map(t=>`<span class="skill-tag" style="background:rgba(247,183,49,0.08);color:var(--amber);border-color:rgba(247,183,49,0.2)">${t}</span>`).join('')}</div>
+          </div>
+        </div>`}
+    </div>`;
+  });
+
+  // Gap meter
+  const gapScore = rm.skill_gap_score || 0;
+  const gapColor = gapScore < 40 ? 'var(--red)' : gapScore < 70 ? 'var(--amber)' : 'var(--teal)';
+
+  // Tips
+  const tipsHTML = (rm.india_specific_tips || []).map(t =>
+    `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.84rem;color:var(--text2);margin-bottom:8px">💡 ${t}</div>`
+  ).join('');
+
+  container.innerHTML = `
+    <div class="roadmap-detail-header">
+      <div class="detail-role">Path to <span>${rm.target_role}</span></div>
+      <div class="detail-meta">From: ${rm.current_role} · Generated ${rm.generated_at ? new Date(rm.generated_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : 'recently'}</div>
+      <div class="detail-stats">
+        <div class="detail-stat"><div class="detail-stat-val purple">${rm.estimated_transition_months || '?'} mo</div><div class="detail-stat-lbl">To transition</div></div>
+        <div class="detail-stat"><div class="detail-stat-val teal">${(rm.phases||[]).filter(p=>!p.is_locked).length}/4</div><div class="detail-stat-lbl">Phases unlocked</div></div>
+        <div class="detail-stat"><div class="detail-stat-val">${gapScore}%</div><div class="detail-stat-lbl">Skill match</div></div>
+      </div>
+      <div class="gap-meter-wrap">
+        <div class="gap-meter-label"><span>Skill gap score</span><span style="color:${gapColor}">${gapScore}% ready</span></div>
+        <div class="gap-meter-bar"><div class="gap-meter-fill" id="gap-fill" style="width:0%;background:${gapScore<40?'linear-gradient(90deg,var(--red),var(--amber))':gapScore<70?'linear-gradient(90deg,var(--amber),var(--teal))':'linear-gradient(90deg,var(--purple),var(--teal))'}"></div></div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--text2);margin-top:8px">${rm.summary || ''}</div>
+      ${(rm.missing_critical_skills||[]).length > 0 ? `
+        <div style="margin-top:10px;font-size:0.8rem;color:var(--text2)">Critical skills to learn: ${rm.missing_critical_skills.map(s=>`<span class="skill-tag" style="font-size:0.75rem">${s}</span>`).join(' ')}</div>` : ''}
+    </div>
+
+    <div class="phases-list">${phasesHTML}</div>
+
+    ${tipsHTML ? `
+    <div style="margin-top:1.5rem">
+      <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:10px">India-specific tips</div>
+      ${tipsHTML}
+    </div>` : ''}
+  `;
+
+  showView('detail');
+
+  // Animate fills after render
+  setTimeout(() => {
+    const fill = document.getElementById('gap-fill');
+    if (fill) fill.style.width = gapScore + '%';
+    document.querySelectorAll('.salary-bar-fill[data-pct]').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 100);
+}
+
+function togglePhase(i) {
+  const body    = document.getElementById('body-' + i);
+  const chevron = document.getElementById('chevron-' + i);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open', isOpen);
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERATING ANIMATION
+// ═══════════════════════════════════════════════════════
+function animateGenSteps() {
+  const steps = ['gstep-0','gstep-1','gstep-2','gstep-3'];
+  steps.forEach(id => document.getElementById(id).className = 'gen-step');
+  document.getElementById('gstep-0').classList.add('current');
+  let i = 0;
+  const iv = setInterval(() => {
+    document.getElementById(steps[i]).classList.remove('current');
+    document.getElementById(steps[i]).classList.add('done');
+    i++;
+    if (i < steps.length) {
+      document.getElementById(steps[i]).classList.add('current');
+    } else {
+      clearInterval(iv);
+    }
+  }, 1800);
+}
+
+// ═══════════════════════════════════════════════════════
+//  BILLING TOGGLE
+// ═══════════════════════════════════════════════════════
+function toggleBilling() {
+  STATE.annualBilling = !STATE.annualBilling;
+  const toggle = document.getElementById('billing-toggle');
+  toggle.classList.toggle('on', STATE.annualBilling);
+
+  const prices = STATE.annualBilling
+    ? { starter: ['₹799', '/year', '₹389 saved vs monthly'],
+        pro:     ['₹2,499', '/year', '₹1,089 saved vs monthly'],
+        elite:   ['₹4,999', '/year', '₹2,189 saved vs monthly'] }
+    : { starter: ['₹99',  '/month', '₹799/year — save ₹389'],
+        pro:     ['₹299', '/month', '₹2,499/year — save ₹1,089'],
+        elite:   ['₹599', '/month', '₹4,999/year — save ₹2,189'] };
+
+  ['starter','pro','elite'].forEach(plan => {
+    const [price, period, save] = prices[plan];
+    document.getElementById(plan + '-price').innerHTML = price + ` <span>${period}</span>`;
+    document.getElementById(plan + '-save').textContent = save;
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const toast   = document.getElementById('toast');
+  const iconEl  = document.getElementById('toast-icon');
+  const msgEl   = document.getElementById('toast-msg');
+  const icons   = { success: '✓', error: '✕', info: 'ℹ' };
+  iconEl.textContent = icons[type] || '✓';
+  msgEl.textContent  = msg;
+  toast.className    = 'toast ' + type + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ═══════════════════════════════════════════════════════
+//  USER MENU
+// ═══════════════════════════════════════════════════════
+function toggleUserMenu() {
+  document.getElementById('user-menu').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const btn  = document.getElementById('user-avatar-btn');
+  const menu = document.getElementById('user-menu');
+  if (btn && !btn.contains(e.target)) menu.classList.remove('open');
+});
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  initGoogleSignIn();
+
+  if (loadState() && STATE.user) {
+    if (STATE.profile) {
+      enterApp();
+    } else {
+      showScreen('onboarding');
+    }
+  } else {
+    showScreen('login');
+  }
+});
+</script>
 </body>
 </html>
